@@ -1,1 +1,186 @@
 
+//En la última sesión estaba corrigiendo listarPasajeros porque no está imprimiendo 
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <string>
+#include <vector>
+#include <sstream>
+
+using namespace std;
+
+struct Vuelo {
+    string nroVuelo;
+    string origen;
+    string destino;
+    string matricula;
+    string piloto;
+    string hora;
+    string fecha;
+    int estado; // 0: programado, 1: realizado
+};
+
+struct Pasajero {
+    string nroVuelo;	
+    string cedula;
+    string nombre;
+    string telefono;
+    int estado; // 1: reserva, 2: a bordo
+};
+
+void agregarVuelo() {
+    Vuelo v;
+    ofstream archivo("VUELOS.TXT", ios::app);
+    if (!archivo) {
+        cerr << "Error al abrir el archivo de vuelos." << endl;
+        return;
+    }
+
+    cout << "Ingrese número de vuelo (6 caracteres): ";
+    cin >> v.nroVuelo;
+    cout << "Ingrese ciudad de origen (8 caracteres): ";
+    cin >> v.origen;
+    cout << "Ingrese ciudad de destino (8 caracteres): ";
+    cin >> v.destino;
+    cout << "Ingrese matrícula del avión (6 caracteres): ";
+    cin >> v.matricula;
+    cout << "Ingrese nombre del piloto (20 caracteres): ";
+    cin.ignore();
+    getline(cin, v.piloto);
+    cout << "Ingrese hora del vuelo (4 caracteres): ";
+    cin >> v.hora;
+    cout << "Ingrese fecha del vuelo (6 caracteres): ";
+    cin >> v.fecha;
+    cout << "Ingrese estado del vuelo (0: programado, 1: realizado): ";
+    cin >> v.estado;
+
+    archivo << v.nroVuelo << ", " << v.origen << ", " << v.destino << ", " << v.matricula << ", " << v.piloto << ", " << v.hora << ", "  << v.fecha << ", " << v.estado << endl;
+    archivo.close();
+    cout << "Vuelo agregado correctamente." << endl;
+}
+
+void agregarPasajero() {
+    Pasajero p;
+    ofstream archivo("PASAJEROS.TXT", ios::app);
+    if (!archivo) {
+        cerr << "Error al abrir el archivo de pasajeros." << endl;
+        return;
+    }
+
+    cout << "Ingrese número de vuelo (6 caracteres): ";
+    cin >> p.nroVuelo;
+    cout << "Ingrese cédula (9 caracteres): ";
+    cin >> p.cedula;
+    cout << "Ingrese nombre (20 caracteres): ";
+    cin.ignore();
+    getline(cin, p.nombre);
+    cout << "Ingrese teléfono (10 caracteres): ";
+    cin >> p.telefono;
+    cout << "Ingrese estado del pasajero (1: reserva, 2: a bordo): ";
+    cin >> p.estado;
+
+    archivo << p.nroVuelo << ", " << p.cedula << ", " << p.nombre << ", " << p.telefono << ", " << p.estado << endl;
+    archivo.close();
+    cout << "Pasajero agregado correctamente." << endl;
+}
+
+void listarVuelos(int estado) {
+    ifstream archivo("VUELOS.TXT");
+    if (!archivo) {
+        cerr << "Error al abrir el archivo de vuelos." << endl;
+        return;
+    }
+    string linea;
+    cout << "Listado de vuelos " << (estado == 0 ? "programados" : "realizados") << ":" << endl;
+    while (getline(archivo, linea)) {
+        if (linea.size() < 54) continue; 
+        Vuelo v;
+        v.nroVuelo = linea.substr(0, 6);
+        v.origen = linea.substr(6, 8);
+        v.destino = linea.substr(14, 8);
+        v.matricula = linea.substr(22, 6);
+        v.piloto = linea.substr(28, 20);
+        v.hora = linea.substr(48, 4);
+        v.fecha = linea.substr(52, 6);
+        v.estado = linea[58] - '0'; 
+        
+		if (v.estado == estado) {
+		    cout << v.nroVuelo << " " << v.origen << " " << v.destino << " " << v.matricula << " " 
+		         << v.piloto << " " << v.hora << " " << v.fecha << endl;
+		}
+
+    }
+    archivo.close();
+}
+
+void listarPasajeros(string nroVuelo) {
+    ifstream archivo("PASAJEROS.TXT");
+    if (!archivo) {
+        cerr << "Error al abrir el archivo de pasajeros." << endl;
+        return;
+    }
+    string linea;
+    cout << "Listado de pasajeros del vuelo " << nroVuelo << ":" << endl;
+    while (getline(archivo, linea)) {
+        if (linea.size() < 47) continue; // Verificación de tamaño mínimo esperado
+        Pasajero p;
+        p.nroVuelo = linea.substr(0, 6);
+        p.cedula = linea.substr(6, 9);
+        p.nombre = linea.substr(15, 20);
+        p.telefono = linea.substr(35, 10);
+        p.estado = linea[45] - '0'; // Convertir char a int
+
+        if (p.nroVuelo == nroVuelo) {
+            cout << p.cedula << " " << p.nombre << " " << p.telefono << " " 
+                 << (p.estado == 1 ? "Reserva" : "A bordo") << endl;
+        }
+    }
+    archivo.close();
+}
+
+
+int main() {
+    int opcion;
+    do {
+        cout << "\n--- Menu ---" << endl;
+        cout << "1. Agregar vuelo" << endl;
+        cout << "2. Agregar pasajero" << endl;
+        cout << "3. Listar vuelos programados" << endl;
+        cout << "4. Listar vuelos realizados" << endl;
+        cout << "5. Listar pasajeros de un vuelo" << endl;
+        cout << "6. Salir" << endl;
+        cout << "Seleccione una opcion: ";
+        cin >> opcion;
+        
+        switch (opcion) {
+            case 1:
+                agregarVuelo();
+                break;
+            case 2:
+                agregarPasajero();
+                break;
+            case 3:
+                listarVuelos(0);
+                break;
+            case 4:
+                listarVuelos(1);
+                break;
+            case 5: {
+                string nroVuelo;
+                cout << "Ingrese número de vuelo: ";
+                cin >> nroVuelo;
+                listarPasajeros(nroVuelo);
+                break;
+            }
+            case 6:
+                cout << "Saliendo..." << endl;
+                break;
+            default:
+                cout << "Opcion invalida." << endl;
+        }
+    } while (opcion != 6);
+    
+    return 0;
+}
+
