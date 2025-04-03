@@ -1,5 +1,5 @@
 
-//En la última sesión estaba corrigiendo listarPasajeros porque no está imprimiendo 
+
 
 #include <iostream>
 #include <fstream>
