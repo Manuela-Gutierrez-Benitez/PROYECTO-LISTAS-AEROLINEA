@@ -1,14 +1,30 @@
 
+/*
+Camila Marín Escobar y Manuela Gutiérrez Benites
 
+9 de abril de 2025
+Estructuras de Datos
+ 
+Proyecto de Listas - Aerolínea
+*/
 
 #include <iostream>
 #include <fstream>
-#include <iomanip>
+#include <sstream>
+#include <cstring>
 #include <string>
 #include <vector>
-#include <sstream>
+#include <locale.h>
 
 using namespace std;
+
+struct Pasajero {
+    string cedula;
+    string nombre;
+    string telefono;
+    int estado; 
+    Pasajero* siguiente;
+};
 
 struct Vuelo {
     string nroVuelo;
@@ -18,169 +34,784 @@ struct Vuelo {
     string piloto;
     string hora;
     string fecha;
-    int estado; // 0: programado, 1: realizado
+    int estado; 
+    Pasajero* ListaPasajeros;
+    Vuelo* Sgte;
 };
 
-struct Pasajero {
-    string nroVuelo;	
-    string cedula;
-    string nombre;
-    string telefono;
-    int estado; // 1: reserva, 2: a bordo
-};
+//-------------------------------------------
+/*
+ Nombre Subrutina: guardarVuelosEnArchivo
+ Objetivo: Guardar la lista de vuelos en el archivo "VUELOS.TXT" para persistir los datos.
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo a la lista
+    guardarVuelosEnArchivo(listaVuelos); // Guardar los vuelos en el archivo
+*/
 
-void agregarVuelo() {
-    Vuelo v;
-    ofstream archivo("VUELOS.TXT", ios::app);
+void guardarVuelosEnArchivo(Vuelo* listaVuelos) {
+    ofstream archivo("VUELOS.TXT");
     if (!archivo) {
-        cerr << "Error al abrir el archivo de vuelos." << endl;
+        cerr << "\n\nError al abrir el archivo VUELOS.TXT para guardar." << endl;
         return;
     }
 
-    cout << "Ingrese número de vuelo (6 caracteres): ";
-    cin >> v.nroVuelo;
-    cout << "Ingrese ciudad de origen (8 caracteres): ";
-    cin >> v.origen;
-    cout << "Ingrese ciudad de destino (8 caracteres): ";
-    cin >> v.destino;
-    cout << "Ingrese matrícula del avión (6 caracteres): ";
-    cin >> v.matricula;
-    cout << "Ingrese nombre del piloto (20 caracteres): ";
-    cin.ignore();
-    getline(cin, v.piloto);
-    cout << "Ingrese hora del vuelo (4 caracteres): ";
-    cin >> v.hora;
-    cout << "Ingrese fecha del vuelo (6 caracteres): ";
-    cin >> v.fecha;
-    cout << "Ingrese estado del vuelo (0: programado, 1: realizado): ";
-    cin >> v.estado;
+    Vuelo* aux = listaVuelos;
+    while (aux) {
+        archivo << aux->nroVuelo << ","
+                << aux->origen << ","
+                << aux->destino << ","
+                << aux->matricula << ","
+                << aux->piloto << ","
+                << aux->hora << ","
+                << aux->fecha << ","
+                << aux->estado << endl;
+        aux = aux->Sgte;
+    }
 
-    archivo << v.nroVuelo << ", " << v.origen << ", " << v.destino << ", " << v.matricula << ", " << v.piloto << ", " << v.hora << ", "  << v.fecha << ", " << v.estado << endl;
     archivo.close();
-    cout << "Vuelo agregado correctamente." << endl;
+    cout << "\n\nDatos de vuelos guardados correctamente." << endl;
 }
 
-void agregarPasajero() {
-    Pasajero p;
-    ofstream archivo("PASAJEROS.TXT", ios::app);
+
+//-------------------------------------------
+/*
+ Nombre Subrutina: guardarPasajerosEnArchivo
+ Objetivo: Guardar la lista de pasajeros en el archivo "PASAJEROS.TXT" para persistir los datos.
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos, que contiene los pasajeros.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo a la lista
+    agregarPasajero(listaVuelos); // Agregar un pasajero al vuelo
+    guardarPasajerosEnArchivo(listaVuelos); // Guardar los pasajeros en el archivo
+*/
+
+void guardarPasajerosEnArchivo(Vuelo* listaVuelos) {
+    ofstream archivo("PASAJEROS.TXT");
     if (!archivo) {
-        cerr << "Error al abrir el archivo de pasajeros." << endl;
+        cerr << "\n\nError al abrir el archivo PASAJEROS.TXT para guardar." << endl;
         return;
     }
 
-    cout << "Ingrese número de vuelo (6 caracteres): ";
-    cin >> p.nroVuelo;
-    cout << "Ingrese cédula (9 caracteres): ";
-    cin >> p.cedula;
-    cout << "Ingrese nombre (20 caracteres): ";
-    cin.ignore();
-    getline(cin, p.nombre);
-    cout << "Ingrese teléfono (10 caracteres): ";
-    cin >> p.telefono;
-    cout << "Ingrese estado del pasajero (1: reserva, 2: a bordo): ";
-    cin >> p.estado;
+    Vuelo* vuelo = listaVuelos;
+    while (vuelo) {
+        Pasajero* pasajero = vuelo->ListaPasajeros;
+        while (pasajero) {
+            archivo << vuelo->nroVuelo << ","
+                    << pasajero->cedula << ","
+                    << pasajero->nombre << ","
+                    << pasajero->telefono << ","
+                    << pasajero->estado << endl;
+            pasajero = pasajero->siguiente;
+        }
+        vuelo = vuelo->Sgte;
+    }
 
-    archivo << p.nroVuelo << ", " << p.cedula << ", " << p.nombre << ", " << p.telefono << ", " << p.estado << endl;
     archivo.close();
-    cout << "Pasajero agregado correctamente." << endl;
+    cout << "\n\nDatos de pasajeros guardados correctamente." << endl;
 }
 
-void listarVuelos(int estado) {
+//-------------------------------------------
+/*
+ Nombre Subrutina: cargarVuelosDesdeArchivo
+ Objetivo: Cargar los vuelos desde el archivo "VUELOS.TXT" y almacenarlos en una lista enlazada.
+ Parámetros: 
+    - listaVuelos (Vuelo*&): Referencia al puntero del primer nodo de la lista de vuelos.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    cargarVuelosDesdeArchivo(listaVuelos); // Cargar vuelos desde el archivo
+    listarVuelos(listaVuelos, 0); // Listar vuelos programados
+*/
+
+void cargarVuelosDesdeArchivo(Vuelo*& listaVuelos) {
     ifstream archivo("VUELOS.TXT");
     if (!archivo) {
-        cerr << "Error al abrir el archivo de vuelos." << endl;
+        cerr << "\n\nEl archivo VUELOS.TXT no se pudo abrir. Se iniciará sin datos." << endl;
         return;
     }
+
+    cout << "\nCargando datos desde VUELOS.TXT..." << endl;
+
     string linea;
-    cout << "Listado de vuelos " << (estado == 0 ? "programados" : "realizados") << ":" << endl;
     while (getline(archivo, linea)) {
-        if (linea.size() < 54) continue; 
-        Vuelo v;
-        v.nroVuelo = linea.substr(0, 6);
-        v.origen = linea.substr(6, 8);
-        v.destino = linea.substr(14, 8);
-        v.matricula = linea.substr(22, 6);
-        v.piloto = linea.substr(28, 20);
-        v.hora = linea.substr(48, 4);
-        v.fecha = linea.substr(52, 6);
-        v.estado = linea[58] - '0'; 
-        
-		if (v.estado == estado) {
-		    cout << v.nroVuelo << " " << v.origen << " " << v.destino << " " << v.matricula << " " 
-		         << v.piloto << " " << v.hora << " " << v.fecha << endl;
-		}
+        stringstream ss(linea);
+        string campo;
+        vector<string> campos;
 
-    }
-    archivo.close();
-}
+        while (getline(ss, campo, ',')) {
+            campos.push_back(campo);
+        }
 
-void listarPasajeros(string nroVuelo) {
-    ifstream archivo("PASAJEROS.TXT");
-    if (!archivo) {
-        cerr << "Error al abrir el archivo de pasajeros." << endl;
-        return;
-    }
-    string linea;
-    cout << "Listado de pasajeros del vuelo " << nroVuelo << ":" << endl;
-    while (getline(archivo, linea)) {
-        if (linea.size() < 47) continue; // Verificación de tamaño mínimo esperado
-        Pasajero p;
-        p.nroVuelo = linea.substr(0, 6);
-        p.cedula = linea.substr(6, 9);
-        p.nombre = linea.substr(15, 20);
-        p.telefono = linea.substr(35, 10);
-        p.estado = linea[45] - '0'; // Convertir char a int
+        if (campos.size() >= 8) {
+            Vuelo* nuevo = new Vuelo;
+            nuevo->nroVuelo = campos[0];
+            nuevo->origen = campos[1];
+            nuevo->destino = campos[2];
+            nuevo->matricula = campos[3];
+            nuevo->piloto = campos[4];
+            nuevo->hora = campos[5];
+            nuevo->fecha = campos[6];
 
-        if (p.nroVuelo == nroVuelo) {
-            cout << p.cedula << " " << p.nombre << " " << p.telefono << " " 
-                 << (p.estado == 1 ? "Reserva" : "A bordo") << endl;
+            stringstream estadoStream(campos[7]);
+            estadoStream >> nuevo->estado;
+
+            nuevo->ListaPasajeros = NULL;
+            nuevo->Sgte = NULL;
+
+            if (!listaVuelos) {
+                listaVuelos = nuevo;
+            } else {
+                Vuelo* aux = listaVuelos;
+                while (aux->Sgte) {
+                    aux = aux->Sgte;
+                }
+                aux->Sgte = nuevo;
+            }
         }
     }
+
     archivo.close();
+    cout << "Datos de vuelos cargados correctamente." << endl;
+}
+//-------------------------------------------
+/*
+ Nombre Subrutina: cargarPasajerosDesdeArchivo
+ Objetivo: Cargar los pasajeros desde el archivo "PASAJEROS.TXT" y asociarlos a sus respectivos vuelos en la lista enlazada.
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos, donde se asociarán los pasajeros.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    cargarVuelosDesdeArchivo(listaVuelos); // Cargar vuelos
+    cargarPasajerosDesdeArchivo(listaVuelos); // Cargar pasajeros
+    listarPasajeros(listaVuelos, "V001", 0); // Listar pasajeros de un vuelo programado
+*/
+
+void cargarPasajerosDesdeArchivo(Vuelo* listaVuelos) {
+    ifstream archivo("PASAJEROS.TXT");
+    if (!archivo) {
+        cerr << "\n\nEl archivo PASAJEROS.TXT no se pudo abrir. Se iniciará sin datos." << endl;
+        return;
+    }
+
+    cout << "\nCargando datos desde PASAJEROS.TXT..." << endl;
+
+    string linea;
+    while (getline(archivo, linea)) {
+        stringstream ss(linea);
+        string campo;
+        vector<string> campos;
+
+        while (getline(ss, campo, ',')) {
+            campos.push_back(campo);
+        }
+
+        if (campos.size() >= 5) {
+            string nroVuelo = campos[0];
+            string cedula = campos[1];
+            string nombre = campos[2];
+            string telefono = campos[3];
+
+            int estado;
+            stringstream estadoStream(campos[4]);
+            estadoStream >> estado;
+
+            Vuelo* vuelo = listaVuelos;
+            while (vuelo && vuelo->nroVuelo != nroVuelo) {
+                vuelo = vuelo->Sgte;
+            }
+
+            if (vuelo) {
+                Pasajero* nuevo = new Pasajero;
+                nuevo->cedula = cedula;
+                nuevo->nombre = nombre;
+                nuevo->telefono = telefono;
+                nuevo->estado = estado;
+                nuevo->siguiente = NULL;
+
+                if (!vuelo->ListaPasajeros) {
+                    vuelo->ListaPasajeros = nuevo;
+                } else {
+                    Pasajero* aux = vuelo->ListaPasajeros;
+                    while (aux->siguiente) {
+                        aux = aux->siguiente;
+                    }
+                    aux->siguiente = nuevo;
+                }
+            }
+        }
+    }
+
+    archivo.close();
+    cout << "Datos de pasajeros cargados correctamente." << endl;
 }
 
+//-------------------------------------------
+bool validarLongitud(const string& dato, int minLongitud, int maxLongitud) {
+    return dato.length() >= minLongitud && dato.length() <= maxLongitud;
+}
 
+//-------------------------------------------
+bool validarNumeroEntero(int& numero, int minValor, int maxValor) {
+    if (cin.fail() || numero < minValor || numero > maxValor) {
+        cin.clear();
+        return false;
+    }
+    return true;
+}
+//-------------------------------------------
+int convertir2digitos(char a, char b) {
+    return (a - '0') * 10 + (b - '0');
+}
+//-------------------------------------------
+bool validarHora(const string& hora) {
+    if (hora.size() != 5 || hora[2] != ':') return false;
+    if (!isdigit(hora[0]) || !isdigit(hora[1]) || !isdigit(hora[3]) || !isdigit(hora[4])) return false;
+
+    int hh = convertir2digitos(hora[0], hora[1]);
+    int mm = convertir2digitos(hora[3], hora[4]);
+    return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
+}
+//-------------------------------------------
+bool validarFecha(const string& fecha) {
+    if (fecha.size() != 8 || fecha[2] != '/' || fecha[5] != '/') return false;
+    if (!isdigit(fecha[0]) || !isdigit(fecha[1]) || !isdigit(fecha[3]) || !isdigit(fecha[4]) || !isdigit(fecha[6]) || !isdigit(fecha[7])) return false;
+
+    int dd = convertir2digitos(fecha[0], fecha[1]);
+    int mm = convertir2digitos(fecha[3], fecha[4]);
+    return dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12;
+}
+//-------------------------------------------
+bool validarNumeroVuelo(const string& nroVuelo, Vuelo* listaVuelos) {
+    Vuelo* aux = listaVuelos;
+    while (aux) {
+        if (aux->nroVuelo == nroVuelo) return true;
+        aux = aux->Sgte;
+    }
+    return false;
+}
+//-------------------------------------------
+bool validarVueloProgramado(const string& nroVuelo, Vuelo* listaVuelos) {
+    Vuelo* aux = listaVuelos;
+    while (aux) {
+        if (aux->nroVuelo == nroVuelo && aux->estado == 0) return true;
+        aux = aux->Sgte;
+    }
+    return false;
+}
+//-------------------------------------------
+void convertirMayusculas(string& texto) {
+    for (int i = 0; i < texto.length(); i++) {
+        texto[i] = toupper(texto[i]);
+    }
+}
+//-------------------------------------------
+/*
+ Nombre Subrutina: agregarVuelo
+ Objetivo: Permitir al usuario ingresar los datos de un nuevo vuelo y añadirlo a la lista de vuelos.
+ Parámetros: 
+    - listaVuelos (Vuelo*&): Referencia al puntero del primer nodo de la lista de vuelos.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo
+    listarVuelos(listaVuelos, 0); // Listar vuelos programados
+*/
+
+void agregarVuelo(Vuelo*& listaVuelos) {
+    Vuelo* nuevo = new Vuelo;
+    nuevo->ListaPasajeros = NULL;
+    nuevo->Sgte = NULL;
+
+    cin.ignore(); 
+
+	do {
+	    cout << "\n\nIngrese número de vuelo (entre 3 y 6 caracteres): ";
+	    getline(cin, nuevo->nroVuelo);
+	    if (!validarLongitud(nuevo->nroVuelo, 3, 6)) {
+	        cout << "Error: Longitud inválida. Intente de nuevo.\n";
+	    } else if (validarNumeroVuelo(nuevo->nroVuelo, listaVuelos)) {
+	        cout << "Error: El número de vuelo ya existe. Intente con otro.\n";
+	    }
+	} while (!validarLongitud(nuevo->nroVuelo, 3, 6) || validarNumeroVuelo(nuevo->nroVuelo, listaVuelos));
+	
+	cout << "\nIngrese ciudad de origen (entre 3 y 8 caracteres): ";
+	getline(cin, nuevo->origen);
+	while (!validarLongitud(nuevo->origen, 3, 8)) {
+	    cout << "Error: Longitud inválida. Intente de nuevo: ";
+	    getline(cin, nuevo->origen);
+	}
+	convertirMayusculas(nuevo->origen);
+	
+	cout << "\nIngrese ciudad de destino (entre 3 y 8 caracteres): ";
+	getline(cin, nuevo->destino);
+	while (!validarLongitud(nuevo->destino, 3, 8)) {
+	    cout << "Error: Longitud inválida. Intente de nuevo: ";
+	    getline(cin, nuevo->destino);
+	}
+	convertirMayusculas(nuevo->destino);
+	
+	cout << "\nIngrese matrícula del avión (entre 3 y 6 caracteres): ";
+	getline(cin, nuevo->matricula);
+	while (!validarLongitud(nuevo->matricula, 3, 6)) {
+	    cout << "Error: Longitud inválida. Intente de nuevo: ";
+	    getline(cin, nuevo->matricula);
+	}
+	
+	cout << "\nIngrese nombre del piloto (entre 3 y 20 caracteres): ";
+	getline(cin, nuevo->piloto);
+	while (!validarLongitud(nuevo->piloto, 3, 20)) {
+	    cout << "Error: Longitud inválida. Intente de nuevo: ";
+	    getline(cin, nuevo->piloto);
+	}
+	convertirMayusculas(nuevo->piloto);
+
+	do {
+	    cout << "\nIngrese hora del vuelo (HH:MM): ";
+	    cin >> nuevo->hora;
+	    if (!validarHora(nuevo->hora)) cout << "Formato incorrecto. Intente de nuevo: ";
+	} while (!validarHora(nuevo->hora));
+	
+	do {
+	    cout << "\nIngrese fecha del vuelo (DD/MM/AA): ";
+	    cin >> nuevo->fecha;
+	    if (!validarFecha(nuevo->fecha)) cout << "Formato incorrecto. Intente de nuevo: ";
+	} while (!validarFecha(nuevo->fecha));
+
+    do {
+        cout << "\nIngrese estado del vuelo (0: programado, 1: realizado): ";
+        cin >> nuevo->estado;
+        if (!validarNumeroEntero(nuevo->estado, 0, 1)) {
+            cout << "Error: Estado inválido. Debe ser 0 o 1. Intente de nuevo: ";
+        }
+    } while (!validarNumeroEntero(nuevo->estado, 0, 1));
+
+    if (!listaVuelos) {
+        listaVuelos = nuevo;
+    } else {
+        Vuelo* aux = listaVuelos;
+        while (aux->Sgte) {
+            aux = aux->Sgte;
+        }
+        aux->Sgte = nuevo;
+    }
+    cout << "\n\nVuelo agregado correctamente." << endl;
+    guardarVuelosEnArchivo(listaVuelos); 
+}
+//-------------------------------------------
+/*
+ Nombre Subrutina: agregarPasajero
+ Objetivo: Permitir al usuario ingresar los datos de un nuevo pasajero y asociarlo a un vuelo específico.
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo
+    agregarPasajero(listaVuelos); // Agregar un pasajero al vuelo
+    listarPasajeros(listaVuelos, "V001", 0); // Listar pasajeros de un vuelo programado
+*/
+
+void agregarPasajero(Vuelo* listaVuelos) {
+    string nroVuelo;
+    cout << "\n\nIngrese número de vuelo (máx. 6 caracteres): ";
+    cin >> nroVuelo;
+
+    if (!validarNumeroVuelo(nroVuelo, listaVuelos)) {
+        cout << "\nError: El número de vuelo no existe." << endl;
+        return;
+    }
+
+    if (!validarVueloProgramado(nroVuelo, listaVuelos)) {
+        cout << "\nError: El vuelo ya ha sido realizado." << endl;
+        return;
+    }
+
+    Pasajero* nuevo = new Pasajero;
+    nuevo->siguiente = NULL;
+
+    cin.ignore(); 
+
+	cout << "\nIngrese cédula (entre 3 y 9 caracteres): ";
+	getline(cin, nuevo->cedula);
+	while (!validarLongitud(nuevo->cedula, 3, 9)) {
+	    cout << "Error: Longitud inválida. Intente de nuevo.\n";
+	    getline(cin, nuevo->cedula);
+	}
+	
+	cout << "\nIngrese nombre (entre 3 y 20 caracteres): ";
+	getline(cin, nuevo->nombre);
+	while (!validarLongitud(nuevo->nombre, 3, 20)) {
+	    cout << "Error: Longitud inválida. Intente de nuevo: ";
+	    getline(cin, nuevo->nombre);
+	}
+	convertirMayusculas(nuevo->nombre);
+	
+	cout << "\nIngrese teléfono (entre 6 y 10 caracteres): ";
+	getline(cin, nuevo->telefono);
+	while (!validarLongitud(nuevo->telefono, 6, 10)) {
+	    cout << "Error: Longitud inválida. Intente de nuevo: ";
+	    getline(cin, nuevo->telefono);
+	}
+
+    do {
+        cout << "\nIngrese estado del pasajero (1: reserva, 2: a bordo): ";
+        cin >> nuevo->estado;
+        if (!validarNumeroEntero(nuevo->estado, 1, 2)) {
+            cout << "Error: Estado inválido. Debe ser 1 o 2: ";
+        }
+    } while (!validarNumeroEntero(nuevo->estado, 1, 2));
+
+    Vuelo* aux = listaVuelos;
+    while (aux && aux->nroVuelo != nroVuelo) {
+        aux = aux->Sgte;
+    }
+
+    if (!aux->ListaPasajeros) {
+        aux->ListaPasajeros = nuevo;
+    } else {
+        Pasajero* temp = aux->ListaPasajeros;
+        while (temp->siguiente) {
+            temp = temp->siguiente;
+        }
+        temp->siguiente = nuevo;
+    }
+    cout << "\n\nPasajero agregado correctamente." << endl;
+    guardarPasajerosEnArchivo(listaVuelos);
+}
+//-------------------------------------------
+/*
+ Nombre Subrutina: listarVuelos
+ Objetivo: Mostrar en pantalla los vuelos según su estado (programados o realizados).
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos.
+    - estado (int): Estado de los vuelos a listar (0: programados, 1: realizados).
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo
+    listarVuelos(listaVuelos, 0); // Listar vuelos programados
+    listarVuelos(listaVuelos, 1); // Listar vuelos realizados
+*/
+
+void listarVuelos(Vuelo* listaVuelos, int estado) {
+    if (!listaVuelos) {
+        cout << "\n\nNo hay vuelos registrados." << endl;
+        return;
+    }
+
+    bool hayVuelos = false; 
+    Vuelo* aux = listaVuelos;
+
+    cout << "\n\nListado de vuelos " << (estado == 0 ? "programados" : "realizados") << ":" << endl;
+    while (aux) {
+        if (aux->estado == estado) {
+            cout << "\nNro. Vuelo: " << aux->nroVuelo;
+            cout << "\nOrigen: " << aux->origen;
+            cout << "\nDestino: " << aux->destino;
+            cout << "\nMatrícula: " << aux->matricula;
+            cout << "\nPiloto: " << aux->piloto;
+            cout << "\nHora: " << aux->hora;
+            cout << "\nFecha: " << aux->fecha;
+            cout << "\nEstado: " << (aux->estado == 0 ? "Programado" : "Realizado") << endl;
+            hayVuelos = true;
+        }
+        aux = aux->Sgte;
+    }
+
+    if (!hayVuelos) {
+        cout << "\n\nNo hay vuelos " << (estado == 0 ? "programados" : "realizados") << "." << endl;
+    }
+}
+//-------------------------------------------
+/*
+ Nombre Subrutina: listarPasajeros
+ Objetivo: Mostrar en pantalla los pasajeros de un vuelo específico según su estado (programado o realizado).
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos.
+    - nroVuelo (string): Número del vuelo del cual se listarán los pasajeros.
+    - estadoVuelo (int): Estado del vuelo (0: programado, 1: realizado).
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo
+    agregarPasajero(listaVuelos); // Agregar un pasajero al vuelo
+    listarPasajeros(listaVuelos, "V001", 0); // Listar pasajeros de un vuelo programado
+    listarPasajeros(listaVuelos, "V001", 1); // Listar pasajeros de un vuelo realizado
+*/
+
+void listarPasajeros(Vuelo* listaVuelos, const string& nroVuelo, int estadoVuelo) {
+    if (!listaVuelos) {
+        cout << "\n\nNo hay vuelos registrados." << endl;
+        return;
+    }
+
+    Vuelo* vueloEncontrado = NULL;
+    Vuelo* aux = listaVuelos;
+    while (aux) {
+        if (aux->nroVuelo == nroVuelo && aux->estado == estadoVuelo) {
+            vueloEncontrado = aux;
+            break;
+        }
+        aux = aux->Sgte;
+    }
+
+    if (!vueloEncontrado) {
+        cout << "\n\nEl vuelo no existe o no tiene el estado solicitado." << endl;
+        return;
+    }
+
+    Pasajero* pasajero = vueloEncontrado->ListaPasajeros;
+    if (!pasajero) {
+        cout << "\n\nEl vuelo no tiene pasajeros registrados." << endl;
+        return;
+    }
+
+    cout << "\n\nListado de pasajeros del vuelo " << nroVuelo << ":" << endl;
+    while (pasajero) {
+        cout << "\nCédula: " << pasajero->cedula;
+        cout << "\nNombre: " << pasajero->nombre;
+        cout << "\nTeléfono: " << pasajero->telefono;
+        cout << "\nEstado: " << (pasajero->estado == 1 ? "Reserva" : "A bordo") << endl;
+        pasajero = pasajero->siguiente;
+    }
+}
+//----------------------------------------------------------------------------------------------------------------
+
+/*
+ Nombre Subrutina: listarVuelosPorPasajero
+ Objetivo: Mostrar en pantalla todos los vuelos (programados y realizados) en los que ha participado un pasajero específico.
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos.
+    - cedula (string): Cédula del pasajero a buscar.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo
+    agregarPasajero(listaVuelos); // Agregar un pasajero al vuelo
+    listarVuelosPorPasajero(listaVuelos, "123456789"); // Listar vuelos del pasajero con cédula 123456789
+*/
+
+
+void listarVuelosPorPasajero(Vuelo* listaVuelos, const string& cedula) {
+    if (!listaVuelos) {
+        cout << "No hay vuelos registrados." << endl;
+        return;
+    }
+
+    bool tieneVuelos = false; // Bandera para verificar si el pasajero tiene vuelos
+
+    cout << "Listado de vuelos del pasajero con cédula " << cedula << ":" << endl;
+
+    Vuelo* aux = listaVuelos;
+    while (aux) {
+        Pasajero* pasajero = aux->ListaPasajeros;
+        while (pasajero) {
+            if (pasajero->cedula == cedula) {
+                tieneVuelos = true;
+                cout << "Nro. Vuelo: " << aux->nroVuelo
+                     << ", Origen: " << aux->origen
+                     << ", Destino: " << aux->destino
+                     << ", Estado: " << (aux->estado == 0 ? "Programado" : "Realizado")
+                     << ", Estado del pasajero: " << (pasajero->estado == 1 ? "Reserva" : "A bordo") << endl;
+            }
+            pasajero = pasajero->siguiente;
+        }
+        aux = aux->Sgte;
+    }
+
+    if (!tieneVuelos) {
+        cout << "El pasajero con cédula " << cedula << " no tiene vuelos registrados." << endl;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------
+/*
+ Nombre Subrutina: marcarVueloComoRealizado
+ Objetivo: Cambiar el estado de un vuelo de "programado" a "realizado".
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos.
+    - nroVuelo (string): Número del vuelo a marcar como realizado.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo
+    marcarVueloComoRealizado(listaVuelos, "V001"); // Marcar el vuelo V001 como realizado
+    listarVuelos(listaVuelos, 1); // Verificar que el vuelo está marcado como realizado
+*/
+
+void marcarVueloComoRealizado(Vuelo* listaVuelos, const string& nroVuelo) {
+    if (!listaVuelos) {
+        cout << "No hay vuelos registrados." << endl;
+        return;
+    }
+
+    Vuelo* aux = listaVuelos;
+    while (aux) {
+        if (aux->nroVuelo == nroVuelo && aux->estado == 0) {
+            aux->estado = 1; // Cambiar el estado a realizado
+            guardarVuelosEnArchivo(listaVuelos); // Actualizar el archivo
+            cout << "El vuelo " << nroVuelo << " ha sido marcado como realizado." << endl;
+            return;
+        }
+        aux = aux->Sgte;
+    }
+
+    cout << "El vuelo no existe o ya ha sido realizado." << endl;
+}
+//----------------------------------------------------------------------------------------------------------------
+
+/*
+ Nombre Subrutina: registrarPasajeroABordo
+ Objetivo: Cambiar el estado de un pasajero de "reserva" a "a bordo" en un vuelo específico.
+ Parámetros: 
+    - listaVuelos (Vuelo*): Puntero al primer nodo de la lista de vuelos.
+    - nroVuelo (string): Número del vuelo en el que se encuentra el pasajero.
+    - cedula (string): Cédula del pasajero a registrar.
+ Retorno: Ninguno (void).
+ Ejemplo de uso: 
+    Vuelo* listaVuelos = NULL;
+    agregarVuelo(listaVuelos); // Agregar un vuelo
+    agregarPasajero(listaVuelos); // Agregar un pasajero al vuelo
+    registrarPasajeroABordo(listaVuelos, "V001", "123456789"); // Registrar pasajero a bordo
+    listarPasajeros(listaVuelos, "V001", 0); // Verificar el cambio de estado del pasajero
+*/
+void registrarPasajeroABordo(Vuelo* listaVuelos, const string& nroVuelo, const string& cedula) {
+    if (!listaVuelos) {
+        cout << "No hay vuelos registrados." << endl;
+        return;
+    }
+
+    Vuelo* vuelo = listaVuelos;
+    while (vuelo && vuelo->nroVuelo != nroVuelo) {
+        vuelo = vuelo->Sgte;
+    }
+
+    if (!vuelo || vuelo->estado == 1) {
+        cout << "El vuelo no existe o ya ha sido realizado." << endl;
+        return;
+    }
+
+    Pasajero* pasajero = vuelo->ListaPasajeros;
+    while (pasajero) {
+        if (pasajero->cedula == cedula && pasajero->estado == 1) {
+            pasajero->estado = 2; // Cambiar el estado a "a bordo"
+            guardarPasajerosEnArchivo(listaVuelos); // Actualizar el archivo
+            cout << "El pasajero con cédula " << cedula << " ha pasado a bordo del vuelo " << nroVuelo << "." << endl;
+            return;
+        }
+        pasajero = pasajero->siguiente;
+    }
+
+    cout << "El pasajero con cédula " << cedula << " no tiene reserva en el vuelo " << nroVuelo << "." << endl;
+}
+//---------------------------------------------------------------------------------------------------------------------------------------
 int main() {
+	
+	setlocale (LC_ALL,"Spanish");
+    Vuelo* listaVuelos = NULL;
+    
+    cargarVuelosDesdeArchivo(listaVuelos);
+    cargarPasajerosDesdeArchivo(listaVuelos);
+
     int opcion;
     do {
-        cout << "\n--- Menu ---" << endl;
+        cout << "\n--- Menú ---" << endl;
         cout << "1. Agregar vuelo" << endl;
         cout << "2. Agregar pasajero" << endl;
         cout << "3. Listar vuelos programados" << endl;
         cout << "4. Listar vuelos realizados" << endl;
-        cout << "5. Listar pasajeros de un vuelo" << endl;
-        cout << "6. Salir" << endl;
-        cout << "Seleccione una opcion: ";
-        cin >> opcion;
+        cout << "5. Listar pasajeros de un vuelo programado" << endl;
+        cout << "6. Listar pasajeros de un vuelo realizado" << endl;
+        cout << "7. Listar vuelos de un pasajero" << endl;
+        cout << "8. Marcar un vuelo como realizado" << endl;
+        cout << "9. Registrar pasajero a bordo" << endl;
+        cout << "10. Salir" << endl;
+        cout << "Seleccione una opción: ";
+       
+		while (!(cin >> opcion) || opcion < 1 || opcion > 10) {
+        cout << "Opción inválida. Intente de nuevo: ";
+        cin.clear();               
+        cin.ignore(1000, '\n');    
+    }
+        system("cls");
         
         switch (opcion) {
             case 1:
-                agregarVuelo();
+            	cout << "\n\n\t\tAGREGAR UN VUELO";
+                agregarVuelo(listaVuelos);
                 break;
             case 2:
-                agregarPasajero();
+            	cout << "\n\n\t\tAGREGAR UN PASAJERO";
+                agregarPasajero(listaVuelos);
                 break;
             case 3:
-                listarVuelos(0);
+            	cout << "\n\n\tLISTAR VUELOS PROGRAMADOS";
+                listarVuelos(listaVuelos, 0); 
                 break;
             case 4:
-                listarVuelos(1);
+            	cout << "\n\n\tLISTAR VUELOS REALIZADOS";
+                listarVuelos(listaVuelos, 1); 
                 break;
             case 5: {
+            	cout << "\n\n\tLISTAR PASAJEROS DE UN VUELO PROGRAMADO";
                 string nroVuelo;
-                cout << "Ingrese número de vuelo: ";
+                cout << "\n\nIngrese número de vuelo: ";
                 cin >> nroVuelo;
-                listarPasajeros(nroVuelo);
+                cin.ignore(); 
+                listarPasajeros(listaVuelos, nroVuelo, 0); 
                 break;
             }
-            case 6:
-                cout << "Saliendo..." << endl;
+            case 6: {
+            	cout << "\n\n\tLISTAR PASAJEROS DE UN VUELO REALIZADO";
+                string nroVuelo;
+                cout << "\n\nIngrese número de vuelo: ";
+                cin >> nroVuelo;
+                cin.ignore(); 
+                listarPasajeros(listaVuelos, nroVuelo, 1); 
+                break;
+            }
+            case 7: {
+                string cedula;
+                cout << "Ingrese la cédula del pasajero: ";
+                cin >> cedula;
+                listarVuelosPorPasajero(listaVuelos, cedula);
+                break;
+            }
+            case 8: {
+                string nroVuelo;
+                cout << "Ingrese el número de vuelo a marcar como realizado: ";
+                cin >> nroVuelo;
+                marcarVueloComoRealizado(listaVuelos, nroVuelo);
+                break;
+            }
+            case 9: {
+                string nroVuelo, cedula;
+                cout << "Ingrese el número de vuelo: ";
+                cin >> nroVuelo;
+                cout << "Ingrese la cédula del pasajero: ";
+                cin >> cedula;
+                registrarPasajeroABordo(listaVuelos, nroVuelo, cedula);
+                break;
+            }
+            
+            
+            case 10:
+                cout << "\n\nSaliendo..." << endl;
                 break;
             default:
-                cout << "Opcion invalida." << endl;
+                cout << "\n\nOpción inválida. Intente de nuevo." << endl;
         }
-    } while (opcion != 6);
-    
+        cout<<endl<<endl;
+        system("pause");
+        system("cls");
+    } while (opcion != 7);
     return 0;
 }
-
+//-------------------------------------------
