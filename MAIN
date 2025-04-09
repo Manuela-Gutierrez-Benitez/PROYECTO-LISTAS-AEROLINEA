@@ -1,6 +1,6 @@
 
 /*
-Camila Marín Escobar y Manuela Gutiérrez Benitez
+Camila Marín Escobar y Manuela Gutiérrez Benites
 
 9 de abril de 2025
 Estructuras de Datos
@@ -722,6 +722,7 @@ int main() {
 
     int opcion;
     do {
+    	cout << "\nAEROLINEA VIAJAR " << endl;
         cout << "\n--- Menú ---" << endl;
         cout << "1. Agregar vuelo" << endl;
         cout << "2. Agregar pasajero" << endl;
@@ -811,7 +812,7 @@ int main() {
         cout<<endl<<endl;
         system("pause");
         system("cls");
-    } while (opcion != 7);
+    } while (opcion != 10);
     return 0;
 }
 //-------------------------------------------
